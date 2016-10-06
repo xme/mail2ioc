@@ -1,0 +1,32 @@
+From roadhouse-miscreantpunchers@roadhou.se Thu Oct  6 17:09:01 2016
+Date: Thu, 6 Oct 2016 16:08:51 +0100
+From: Mike Brookes via Roadhouse-miscreantpunchers <roadhouse-miscreantpunchers@roadhou.se>
+Reply-To: Mike Brookes <mike.brookes@gmail.com>
+To: Nathan via Roadhouse-miscreantpunchers <roadhouse-miscreantpunchers@roadhou.se>
+Subject: [RH-MP] Splunk: Single Instance small .exe over 24 hours
+
+Hey All,
+
+Sharing this and looking for other clever use cases on what could be looked
+for. Set this to run back over 24 hours and look for <2mb exe that only
+appear once in the logs - idea is that it should bubble up more targeted
+attempts:
+
+index="gis_bcoat" "GET" ".exe" cs_uri_path="*.exe" http_method="GET"
+bytes_out<204800 NOT http_referrer="*" dest_host!="*.google.com"
+dest_host!="gvt1.com"  | stats count values(cs_uri_path) by dest_host |
+where count=1 | fields - count
+
+It's FP prone, but quick to hunt from in the grand scheme of things!
+
+Anyone got anything similar?
+
+Mike
+
+
+    [ Part 2: "Attached Text" ]
+
+_______________________________________________
+Roadhouse-miscreantpunchers mailing list
+Roadhouse-miscreantpunchers@roadhou.se
+https://roadhou.se/mailman/listinfo/roadhouse-miscreantpunchers
