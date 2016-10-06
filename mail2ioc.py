@@ -36,12 +36,12 @@ class Parser(object):
 			self.handler = Output.getHandler(output_format)
 
 		self.ext_filter = '*.' + input_format
-		parser_format = 'parse_' + input_format
-		try:
-			self.parser_func = getattr(self, parser_format)
-		except AttributeError:
-			e = 'Selected parser format is not supported: %s' % (input_format)
-			raise NotImplementedError(e)
+#		parser_format = 'parse_' + input_format
+#		try:
+#			self.parser_func = getattr(self, parser_format)
+#		except AttributeError:
+#			e = 'Selected parser format is not supported: %s' % (input_format)
+#			raise NotImplementedError(e)
 
 	def load_patterns(self, fpath):
 		config = ConfigParser.ConfigParser()
@@ -87,7 +87,7 @@ class Parser(object):
 			pass
 		return False
 
-	def parse_page(self, fpath, data, page_num):
+	def parse_page(self, data, page_num):
 		for ind_type, ind_regex in self.patterns.items():
 			matches = ind_regex.findall(data)
 
@@ -107,28 +107,30 @@ class Parser(object):
 
 					self.dedup_store.add((ind_type, ind_match))
 
-				self.handler.print_match(fpath, page_num, ind_type, ind_match)
+				self.handler.print_match(page_num, ind_type, ind_match)
 
-	def parse_txt(self, data, fpath):
+	def parse(self, data):
 		try:
 			if self.dedup:
 				self.dedup_store = set()
 
 			# data = f.read()
 			# self.handler.print_header(fpath)
-			self.parse_page(fpath, data, 1)
-			self.handler.print_footer(fpath)
-		except (KeyboardInterrupt, SystemExit):
-			raise
-
-	def parse(self, path):
-		try:
-			self.parser_func(path, 'stdin')
-			return
+			self.parse_page(data, 1)
+			# self.handler.print_footer(fpath)
 		except (KeyboardInterrupt, SystemExit):
 			raise
 		except Exception as e:
-			self.handler.print_error(path, e)
+			self.handler.print_error(data, e)
+
+#	def parse(self, path):
+#		try:
+#			self.parser_func(path, 'stdin')
+#			return
+#		except (KeyboardInterrupt, SystemExit):
+#			raise
+#		except Exception as e:
+#			self.handler.print_error(path, e)
 
 def extract_body(p):
 	''' Extract body from the raw email '''

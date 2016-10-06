@@ -19,7 +19,7 @@ def getHandler(output_format):
 	return handler_class()
 
 class OutputHandler(object):
-	def print_match(self, fpath, page, name, match):
+	def print_match(self, page, name, match):
 		pass
 
 	def print_header(self, fpath):
@@ -35,8 +35,8 @@ class OutputHandler_csv(OutputHandler):
 	def __init__(self):
 		self.csv_writer = csv.writer(sys.stdout)
 
-	def print_match(self, fpath, page, name, match):
-		self.csv_writer.writerow((fpath, page, name, match))
+	def print_match(self, page, name, match):
+		self.csv_writer.writerow((page, name, match))
 
 	def print_error(self, fpath, exception):
 		self.csv_writer.writerow((fpath, '0', 'error', exception))
@@ -45,14 +45,14 @@ class OutputHandler_tsv(OutputHandler):
 	def __init__(self):
 		self.csv_writer = csv.writer(sys.stdout, delimiter = '\t')
 
-	def print_match(self, fpath, page, name, match):
-		self.csv_writer.writerow((fpath, page, name, match))
+	def print_match(self, page, name, match):
+		self.csv_writer.writerow((page, name, match))
 
 	def print_error(self, fpath, exception):
 		self.csv_writer.writerow((fpath, '0', 'error', exception))
 
 class OutputHandler_json(OutputHandler):
-	def print_match(self, fpath, page, name, match):
+	def print_match(self, page, name, match):
 		data = {
 			'path' : fpath,
 			'file' : os.path.basename(fpath),
@@ -77,7 +77,7 @@ class OutputHandler_yara(OutputHandler):
 	def __init__(self):
 		self.rule_enc = ''.join(chr(c) if chr(c).isupper() or chr(c).islower() or chr(c).isdigit() else '_' for c in range(256))
 
-	def print_match(self, fpath, page, name, match):
+	def print_match(self, page, name, match):
 		if name in self.cnt:
 			self.cnt[name] += 1
 		else:
@@ -109,7 +109,7 @@ class OutputHandler_netflow(OutputHandler):
 	def __init__(self):
 		print "host 255.255.255.255"
 
-	def print_match(self, fpath, page, name, match):
+	def print_match(self, page, name, match):
 		data = {
 			'type' : name,
 			'match': match
