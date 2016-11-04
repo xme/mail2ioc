@@ -23,8 +23,6 @@ try:
 except ImportError:
     import ConfigParser
 
-import Output
-
 reload(sys)  
 sys.setdefaultencoding('utf8')
 
@@ -41,10 +39,10 @@ class Parser(object):
         wldir = os.path.join(basedir, 'whitelists')
         self.whitelist = self.load_whitelists(wldir)
         self.dedup = dedup
-        if output_handler:
-            self.handler = output_handler
-        else:
-            self.handler = Output.getHandler(output_format)
+ #       if output_handler:
+ #           self.handler = output_handler
+ #       else:
+ #           self.handler = Output.getHandler(output_format)
 
 #        self.ext_filter = '*.' + input_format
 #       parser_format = 'parse_' + input_format
@@ -141,7 +139,8 @@ class Parser(object):
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
-            self.handler.print_error(data, e)
+#           self.handler.print_error(data, e)
+            print e
 
 #   def parse(self, path):
 #       try:

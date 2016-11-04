@@ -1,0 +1,8 @@
+mailboxes:
+  ops-trust.net:
+    server: mail.fqdn
+    username: login
+    password: password
+    folder: "Your.IMAP.Folder"
+    ssl: yes
+    delete: yes
