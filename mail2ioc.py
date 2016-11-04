@@ -122,7 +122,7 @@ class Parser(object):
                         self.dedup_store.add((ind_type, ind_match))
 
                     jsonData = {
-                        'timestamp' : strftime("%Y-%m-%d %H:%M:%S", gmtime()),
+                        'timestamp' : strftime("%Y-%m-%d %H:%M:%S", localtime()),
                         'mailbox' : mailbox,
                         'tags' : tags,
                         'indicator' : ind_type,
