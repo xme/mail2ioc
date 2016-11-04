@@ -16,7 +16,8 @@ import re
 import optparse
 import yaml
 import json
-from time import gmtime, strftime
+import sqlite3
+from time import localtime, strftime
 
 try:
     import configparser as ConfigParser
@@ -121,15 +122,19 @@ class Parser(object):
 
                         self.dedup_store.add((ind_type, ind_match))
 
+                    if dbSearch(ind_type, ind_match):
+                        continue
+
                     jsonData = {
-                        'timestamp' : strftime("%Y-%m-%d %H:%M:%S", localtime()),
-                        'mailbox' : mailbox,
-                        'tags' : tags,
-                        'indicator' : ind_type,
-                        'match' : ind_match
+                            'timestamp' : strftime("%Y-%m-%d %H:%M:%S", localtime()),
+                            'mailbox' : mailbox,
+                            'tags' : tags,
+                            'indicator' : ind_type,
+                            'match' : ind_match
                     }
                     print(json.dumps(jsonData))
-                    
+                    dbAdd(ind_type, ind_match)
+
 #                    self.handler.print_match(1, ind_type, ind_match)
 
             # data = f.read()
@@ -150,6 +155,61 @@ class Parser(object):
 #           raise
 #       except Exception as e:
 #           self.handler.print_error(path, e)
+
+def dbCreate():
+
+    """ Create the SQLite DB at first run """
+
+    if not yamlConfig['database']['file'] or not os.path.isfile(yamlConfig['database']['file']):
+        try:
+            db = sqlite3.connect(yamlConfig['database']['file'])
+            cursor = db.cursor()
+            cursor.execute('''CREATE TABLE iocs(
+                            type TEXT,
+                            match TEXT)''')
+            db.commit()
+            db.close()
+        except sqlite3.DatabaseError, e:
+            print 'Cannot initialize the SQLite DB %s: %s' % (yamlConfig['database']['file'], e)
+            return False
+    return True
+
+def dbSearch(type, value):
+
+    """ Search for an IOC in the database """
+
+    if not yamlConfig['database']['file'] or not type or not value:
+        return False
+
+    try:
+        db = sqlite3.connect(yamlConfig['database']['file'])
+        cursor = db.cursor()
+        cursor.execute('''SELECT type, match FROM iocs WHERE type=? AND match=?''',
+                        (type, value))
+        if cursor.fetchone():
+            db.close()
+            return True
+    except sqlite3.DatabaseError, e:
+        print 'Cannot search the SQLite DB %s: %s' % (yamlConfig['database']['file'], e)
+    return False
+
+def dbAdd(type, value):
+
+    """ Search for an IOC in the database """
+
+    if not yamlConfig['database']['file'] or not type or not value:
+        return False
+
+    try:
+        db = sqlite3.connect(yamlConfig['database']['file'])
+        cursor = db.cursor()
+        cursor.execute('''INSERT INTO iocs(type, match) VALUES(?,?)''', (type, value))
+        db.commit()
+        db.close()
+        return True
+    except sqlite3.DatabaseError, e:
+        print 'Cannot insert the SQLite DB %s: %s' % (yamlConfig['database']['file'], e)
+    return False
 
 def extract_body(p):
     ''' Extract body from the raw email '''
@@ -184,6 +244,9 @@ if __name__ == '__main__':
         exit(1)
 
     parseConfigFile(options.config)
+
+    if yamlConfig['database']['file']:
+        dbCreate()
 
     for mailbox in yamlConfig['mailboxes']:
         print "--- DEBUG: Processing " + mailbox

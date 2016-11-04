@@ -6,3 +6,6 @@ mailboxes:
     folder: "Your.IMAP.Folder"
     ssl: yes
     delete: yes
+
+database:
+  file: mail2ioc.db
