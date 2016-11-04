@@ -228,7 +228,8 @@ if __name__ == '__main__':
             email_subject = email_message['Subject']
 
             # Extract mailing list tag from subject
-            email_tags = re.findall('\[(.*)\]', email_subject)
+            m = re.findall('\[(.*?)\]', email_subject)
+            email_tags = list(set(m))
             
             print "+++ New email"
             print "+++ From: " + email_from
