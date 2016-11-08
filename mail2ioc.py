@@ -40,18 +40,6 @@ class Parser(object):
         wldir = os.path.join(basedir, 'whitelists')
         self.whitelist = self.load_whitelists(wldir)
         self.dedup = dedup
- #       if output_handler:
- #           self.handler = output_handler
- #       else:
- #           self.handler = Output.getHandler(output_format)
-
-#        self.ext_filter = '*.' + input_format
-#       parser_format = 'parse_' + input_format
-#       try:
-#           self.parser_func = getattr(self, parser_format)
-#       except AttributeError:
-#           e = 'Selected parser format is not supported: %s' % (input_format)
-#           raise NotImplementedError(e)
 
     def load_patterns(self, fpath):
         config = ConfigParser.ConfigParser()
@@ -123,6 +111,8 @@ class Parser(object):
                         self.dedup_store.add((ind_type, ind_match))
 
                     if dbSearch(ind_type, ind_match):
+                        if options.debug:
+                            sys.stderr.write('--- IOC %s: %s skipped\n' % (ind_type, ind_match))
                         continue
 
                     jsonData = {
@@ -146,15 +136,6 @@ class Parser(object):
         except Exception as e:
 #           self.handler.print_error(data, e)
             print e
-
-#   def parse(self, path):
-#       try:
-#           self.parser_func(path, 'stdin')
-#           return
-#       except (KeyboardInterrupt, SystemExit):
-#           raise
-#       except Exception as e:
-#           self.handler.print_error(path, e)
 
 def dbCreate():
 
@@ -230,10 +211,18 @@ def parseConfigFile(configFile):
             exit(1)
     
 if __name__ == '__main__':
+    global options;
+
     parser = optparse.OptionParser("usage: %prog [options]")
     parser.add_option('-c','--config', dest="config",
                     help='load configuration from file', metavar='FILE')
+    parser.add_option('-d', '--debug', action='store_true', dest="debug",
+                    help='display debug information')
     (options, args) = parser.parse_args()
+
+    if options.debug:
+        sys.stderr.write('+++ Debug enabled\n')
+
     if not options.config:
         if os.path.isfile('/etc/mail2ioc.yaml'):
             options.config('/etc/mail2ioc.yaml')
@@ -249,7 +238,8 @@ if __name__ == '__main__':
         dbCreate()
 
     for mailbox in yamlConfig['mailboxes']:
-        print "--- DEBUG: Processing " + mailbox
+        if options.debug:
+            sys.stderr.write('+++ Processing mailbox: %s\n' % mailbox)
         if yamlConfig['mailboxes'][mailbox]['ssl'] == True:
             imap = imaplib.IMAP4_SSL(yamlConfig['mailboxes'][mailbox]['server'])
         else:
@@ -269,14 +259,16 @@ if __name__ == '__main__':
         result, data = imap.uid('search', None, 'UNSEEN')
         i = len(data[0].split())
 
+        nbEmails = 0
         for x in range(i):
+            nbEmails+=1
             latest_email_uid = data[0].split()[x]
             result, email_data = imap.uid('fetch', latest_email_uid, '(RFC822)')
             # result, email_data = conn.store(num,'-FLAGS','\\Seen') 
             # this might work to set flag to seen, if it doesn't already
             raw_email = email_data[0][1]
-            raw_email_string = raw_email.decode('utf-8')
-            email_message = email.message_from_string(raw_email_string)
+            # raw_email_string = raw_email.decode('utf-8')
+            email_message = email.message_from_string(raw_email)
             
             
             #email_from = str(email.header.make_header(email.header.decode_header(email_message['From']))).decode('utf-8')
@@ -293,10 +285,9 @@ if __name__ == '__main__':
             m = re.findall('\[(.*?)\]', email_subject)
             email_tags = list(set(m))
             
-            print "+++ New email"
-            print "+++ From: " + email_from
-            print "+++ To: " + email_to
-            print "+++ Subject: " + email_subject
+            if options.debug:
+                sys.stderr.write('+++ New email:\n+++ From: %s\n+++ To: %s\n+++ Subject: %s\n' % 
+                    (email_from, email_to, email_subject))
 
             # Body details
             for part in email_message.walk():
@@ -314,6 +305,10 @@ if __name__ == '__main__':
 
         # Expunge messages flagged as 'deleted'            
         if yamlConfig['mailboxes'][mailbox]['delete'] == True:
-            print '--- DEBUG: Expuging processed messages'
+            if options.debug:
+                sys.stderr.write('+++ Expunged %d processed messages\n' % nbEmails)
             result = imap.expunge()
+
+        imap.close()
+        imap.logout()
 
