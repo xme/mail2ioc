@@ -124,6 +124,8 @@ class Parser(object):
                     }
                     print(json.dumps(jsonData))
                     dbAdd(ind_type, ind_match)
+                    if options.debug or options.verbose:
+                        sys.stderr.write('New IOC found (%s): %s\n' % (ind_type, ind_match))
 
 #                    self.handler.print_match(1, ind_type, ind_match)
 
@@ -216,8 +218,9 @@ if __name__ == '__main__':
     parser = optparse.OptionParser("usage: %prog [options]")
     parser.add_option('-c','--config', dest="config",
                     help='load configuration from file', metavar='FILE')
-    parser.add_option('-d', '--debug', action='store_true', dest="debug",
+    parser.add_option('-d', '--debug', action='store_true', dest='debug',
                     help='display debug information')
+    parser.add_option('-v', '--verbose', action='store_true', dest='verbose')
     (options, args) = parser.parse_args()
 
     if options.debug:
@@ -301,7 +304,6 @@ if __name__ == '__main__':
             # Flag the message as 'Deleted' if requested by the configuration
             if yamlConfig['mailboxes'][mailbox]['delete'] == True:
                 result = imap.uid('store', latest_email_uid, '+FLAGS', '(\\Deleted)')
-                # print "DEBUG DELETE: " + result
 
         # Expunge messages flagged as 'deleted'            
         if yamlConfig['mailboxes'][mailbox]['delete'] == True:
