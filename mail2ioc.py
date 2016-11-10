@@ -296,6 +296,11 @@ if __name__ == '__main__':
             for part in email_message.walk():
                 if part.get_content_type() == "text/plain":
                     email_body = part.get_payload(decode=True)
+
+                    # Search for TLP details
+                    m = re.findall('tlp[: ]+(white|green|amber|red)', email_body, re.IGNORECASE)
+                    if m:
+                        email_tags.append('TLP:' + m[0].upper())
                     parser = Parser(None, True, 'csv')
                     parser.parse(mailbox, email_tags, email_body)
                 else:
